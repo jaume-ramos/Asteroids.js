@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <!meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, minimal-ui">
+    <meta name="viewport" content="width=598, initial-scale=1, user-scalable=no, minimal-ui">
+    <title>Asteroids</title>
+    <script src="js/phaser.min.js" type="text/javascript"></script>
+    <script src="js/asteroids.js" type="text/javascript"></script>
+    <style>
+        body{
+            margin: 0px;
+            margin-top: 0px;
+            margin-right: 0px;
+            margin-bottom: 0px;
+            margin-left: 0px;
+                
+        }
+        div:-webkit-full-screen {
+            width: 100% !important;
+        }   
+        div:-moz-full-screen {
+            width: 100% !important;
+        }
+        div:-ms-fullscreen {
+            width: 100% !important;
+        }
+        div:fullscreen {
+            width: 100% !important;
+        }
+    </style>
+</head>
+<body>
+<script type="text/javascript">
+window.onresize = function(){console.log ("rz:" + window.innerWidth + " x " + window.innerHeight);};
+window.onorientationchange = function() {console.log ("och:" + window.innerWidth + " x " + window.innerHeight);};
+
+function launchIntoFullscreen(element) {
+  if(element.requestFullscreen) {
+    element.requestFullscreen();
+  } else if(element.mozRequestFullScreen) {
+    element.mozRequestFullScreen();
+  } else if(element.webkitRequestFullscreen) {
+    element.webkitRequestFullscreen();
+  } else if(element.msRequestFullscreen) {
+    element.msRequestFullscreen();
+  }
+}
+
+//launchIntoFullscreen(document.body); 
+</script>
+</body>
+</html>
