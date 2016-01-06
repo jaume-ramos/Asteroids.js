@@ -79,7 +79,7 @@ function preload() {
 
     // Carrega els sons    
     game.load.audio('musica', 'assets/musica.ogg');
-    game.load.audio('accelera', 'assets/accelera.ogg');
+    game.load.audio('accelera', 'assets/thrust.ogg');
     game.load.audio('explosio', 'assets/explosio.ogg');
 }
 
@@ -89,8 +89,8 @@ function preload() {
 function create() {
 
     //  Crea els elements d'audio        
-    musica_sound = game.add.audio('musica', 1, true);
-    accelera_sound = game.add.audio('accelera');
+    musica_sound = game.add.audio('musica', 0.5, true);
+    accelera_sound = game.add.audio('accelera', 1, true);
     explosio_sound = game.add.audio('explosio');
     
     //  Posa el fonsPedres del joc
@@ -114,6 +114,8 @@ function create() {
 
     // Defineix el fregament de la nau
     nau.body.drag.set(100);
+    nau.body.angularDrag = 200;
+    nau.body.maxAngular = 200;
     // Defineix la màxima velocitat de la nau
     nau.body.maxVelocity.set(200);
 
@@ -189,69 +191,80 @@ function update() {
     //  Mou cap cap a la dreta les pedres
     fonsPedres.tilePosition.x += 0.5;
 
-    // Mostra cercles per indicar la posició dels controls tàctils
-    if (cercleEsquerra) {
-        cercleEsquerra.destroy();
-    }
-    if (touchEsquerra) {
-        cercleEsquerra = game.add.graphics(0, 0);
-        cercleEsquerra.lineStyle(6, 0x00ff00);
-        cercleEsquerra.drawCircle(touchEsquerraPosInicial.x, touchEsquerraPosInicial.y, 40);
+    if (game.device.desktop === false) { // Control tàctil
+        if (cercleEsquerra) {
+            cercleEsquerra.destroy();
+        }
+        if (cercleDreta) {
+            cercleDreta.destroy();
+        }
+        // Si la nau és activa controla el moviment
+        if (nau.alive) {
+            nau.frame = 0;
+            if (touchEsquerra) {
+                cercleEsquerra = game.add.graphics(0, 0);
+                cercleEsquerra.lineStyle(6, 0x00ff00);
+                cercleEsquerra.drawCircle(touchEsquerraPosInicial.x, touchEsquerraPosInicial.y, 40);
+                cercleEsquerra.lineStyle(2, 0x00ff00);
+                cercleEsquerra.drawCircle(touchEsquerraPosInicial.x, touchEsquerraPosInicial.y, 60);
 
-        cercleEsquerra.lineStyle(2, 0x00ff00);
-        cercleEsquerra.drawCircle(touchEsquerraPosInicial.x, touchEsquerraPosInicial.y, 60);
-
-    }
-    if (cercleDreta) {
-        cercleDreta.destroy();
-    }
-    if (touchDreta) {
-        cercleDreta = game.add.graphics(0, 0);
-        cercleDreta.lineStyle(6, 0xff0000);
-        cercleDreta.drawCircle(touchDreta.x, touchDreta.y, 40);
-
-        cercleDreta.lineStyle(2, 0xff0000);
-        cercleDreta.drawCircle(touchDreta.x, touchDreta.y, 60);
-    }
-
-    // Si la nau és activa controla el moviment
-    if (nau.alive) {
-        // Controls tàctils
-        if (touchEsquerra) {
-            var ang = touchEsquerraPosInicial.angle(touchEsquerra);
-            //nau.rotation = ang;
-            ang *= 50;
-            nau.body.angularVelocity = ang;
-            var vel = touchEsquerraPosInicial.distance(touchEsquerra, true) * 30;
-            game.physics.arcade.accelerationFromRotation(nau.rotation, vel, nau.body.acceleration);
-        } else {
-            if (cursors.up.isDown) {
-                //  Tecla amunt fa accelerar la nau 
-                game.physics.arcade.accelerationFromRotation(nau.rotation, 200, nau.body.acceleration);
-                nau.frame = 1;
-                accelera_sound.play();
+                //movimentTactil1();
+                movimentTactil2();
             } else {
                 nau.body.acceleration.set(0);
-                nau.frame = 0;
+                nau.body.angularAcceleration = 0;
             }
+            if (touchDreta) {
+                cercleDreta = game.add.graphics(0, 0);
+                cercleDreta.lineStyle(6, 0xff0000);
+                cercleDreta.drawCircle(touchDreta.x, touchDreta.y, 40);
+                cercleDreta.lineStyle(2, 0xff0000);
+                cercleDreta.drawCircle(touchDreta.x, touchDreta.y, 60);
+                dispararBala();
+            }
+        }
+
+    } else {  // Control amb les tecles
+
+        if (nau.alive) {
+            //  Tecles amunt i avall fa accelerar o frenar  la nau
+            if (cursors.up.isDown && cursors.down.isUp) {  
+                game.physics.arcade.accelerationFromRotation(nau.rotation, 200, nau.body.acceleration);
+                nau.frame = 1;
+                if(!accelera_sound.isPlaying){
+                    accelera_sound.play();
+                }                 
+            } else {
+                nau.frame = 0;
+                accelera_sound.stop();
+            }       
+            //if (cursors.down.isDown && cursors.up.isUp) {  
+            //    game.physics.arcade.accelerationFromRotation(nau.rotation, -200, nau.body.acceleration);
+            //}                         
+            if (cursors.down.isUp && cursors.up.isUp) {  
+                nau.body.acceleration.set(0,0);
+            }             
 
             // Tecles dreta i esquerra fan rotar la nau
+            var velAng = 0;
             if (cursors.left.isDown) {
-                nau.body.angularVelocity = -300;
-            } else if (cursors.right.isDown) {
-                nau.body.angularVelocity = 300;
-            } else {
-                nau.body.angularVelocity = 0;
+                velAng = -300;
+            }                 
+            if (cursors.right.isDown) {
+                velAng += 300;
+            } 
+            nau.body.angularVelocity = velAng;
+            
+            if (teclaDisparar.isDown) {
+                dispararBala();
             }
         }
 
-        // Dispara
-        if (touchDreta) {        
-            dispararBala();
-        } else if (teclaDisparar.isDown) {
-            dispararBala();
-        }
+    }
 
+
+    if (nau.alive) {
+        
         // Comprova el temporitzador per crear un nou asteroide
         if (game.time.now > seguentAsteroide) {
             creaAsteroide();
@@ -277,7 +290,58 @@ function update() {
  *                                                                            *
  ******************************************************************************
  */
+/*
+ * Controla el moviment de la mateixa forma que amb les tecles
+ */
+function movimentTactil1() {
 
+    var angDeg = touchEsquerraPosInicial.angle(touchEsquerra, true);
+    var absAngDeg = Math.abs(angDeg);
+
+    if (angDeg < -50 && angDeg > -130) {
+        game.physics.arcade.accelerationFromRotation(nau.rotation, 100, nau.body.acceleration);
+        nau.frame = 1;
+        accelera_sound.play();
+    } 
+    
+    var velAng = 0;
+    if (absAngDeg > 120) {
+        velAng = -100;
+    } else if (absAngDeg < 60 && absAngDeg > 5) {
+        velAng = 100;
+    }
+    nau.body.angularVelocity = velAng;
+
+}
+
+/*
+ * 
+ */
+function movimentTactil2() {
+
+    var distancia = touchEsquerraPosInicial.distance(touchEsquerra, true);
+    var angRad = touchEsquerraPosInicial.angle(touchEsquerra);
+    var angDeg = touchEsquerraPosInicial.angle(touchEsquerra, true);
+
+    if (distancia > 10){
+        nau.rotation = angRad;
+        game.physics.arcade.velocityFromAngle(angDeg, distancia * 2, nau.body.velocity);
+    } else {
+        
+    }
+
+}
+
+function movimentTactil3() {
+
+    var distancia = touchEsquerraPosInicial.distance(touchEsquerra, true);
+    var vector = Phaser.Point.subtract (touchEsquerraPosInicial, touchEsquerra);
+    var angRad = touchEsquerraPosInicial.angle(touchEsquerra);
+    var angDeg = touchEsquerraPosInicial.angle(touchEsquerra, true);
+    var absAngDeg = Math.abs(angDeg);
+    var rotacio = nau.rotation % (2*Math.PI);
+
+}
 /*
  * Callback per quan es prem la pantalla en un dispositiu tàctil
  */
@@ -448,7 +512,7 @@ function reiniciarJoc() {
     nau.body.acceleration.set(0);
     nau.body.velocity.set(0);
     nau.body.angularVelocity = 0;
-    nau.angle = -90;
+    nau.angle = 0;
     nau.revive();
     jugant = true;
 }
@@ -460,6 +524,7 @@ function aturarJoc() {
     
     touchDreta = null;
     touchEsquerra = null;
+    accelera_sound.stop();
     if (cercleEsquerra) {
         cercleEsquerra.destroy();
     }
